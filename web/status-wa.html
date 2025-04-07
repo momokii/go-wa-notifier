@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ .Title }}</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+        .container {
+            margin-top: 50px;
+        }
+        #qrcode {
+            margin: 30px auto;
+        }
+        #status {
+            padding: 10px;
+            margin: 20px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .connected {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .waiting {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        button {
+            padding: 10px 15px;
+            margin: 10px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #0069d9;
+        }
+        #logoutBtn {
+            background-color: #dc3545;
+        }
+        #logoutBtn:hover {
+            background-color: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>WhatsApp Connection Status</h1>
+        <div id="status" class="waiting">Checking WhatsApp connection status...</div>
+        <div id="qrcode"></div>
+        <div id="controls">
+            <button id="refreshBtn">Refresh Status</button>
+            <button id="logoutBtn" style="display:none">Logout</button>
+        </div>
+    </div>
+    
+    <script>
+        $(document).ready(function() {
+            // Track connection state
+            let isConnected = false;
+            
+            // Async function to check WhatsApp status
+            async function checkWhatsAppStatus() {
+                try {
+                    const response = await fetch('/api/wa/status')
+                    let data = await response.json()
+                    data = data.data
+                    
+                    // Clear previous QR code
+                    $('#qrcode').empty();
+                    
+                    if (data.IsConnected) {
+                        // WhatsApp is connected
+                        isConnected = true;
+                        $('#status')
+                            .text('WhatsApp is connected!')
+                            .removeClass('waiting error')
+                            .addClass('connected');
+                        $('#logoutBtn').show();
+                    } else if (data.IsReady && data.QRCode) {
+                        // QR code is available
+                        isConnected = false;
+                        $('#status')
+                            .text('Scan this QR code with WhatsApp to connect')
+                            .removeClass('connected error')
+                            .addClass('waiting');
+                        $('#logoutBtn').hide();
+                        
+                        // Generate and display QR code
+                        const qr = qrcode(0, 'L');
+                        qr.addData(data.QRCode);
+                        qr.make();
+                        $('#qrcode').html(qr.createImgTag(5));
+                    } else {
+                        // Waiting for QR code or other status
+                        isConnected = false;
+                        $('#status')
+                            .text('Waiting for WhatsApp connection...')
+                            .removeClass('connected error')
+                            .addClass('waiting');
+                        $('#logoutBtn').hide();
+                    }
+                } catch (error) {
+                    $('#status')
+                        .text('Error checking WhatsApp status: ' + error.message)
+                        .removeClass('connected waiting')
+                        .addClass('error');
+                }
+            }
+            
+            // Logout function
+            async function logout() {
+                try {
+                    $('#status')
+                        .text('Logging out...')
+                        .removeClass('connected error')
+                        .addClass('waiting');
+                    
+                    const resp = await fetch('/api/wa/logout', {
+                        method: 'POST'
+                    })
+                    const response = await resp.json()
+                    
+                    if (!response.error) {
+                        $('#status')
+                            .text('Logged out successfully. Refreshing...')
+                            .removeClass('error connected')
+                            .addClass('waiting');
+                        
+                        // Give some time to see the message before refreshing
+                        setTimeout(() => {
+                            location.reload();
+                        }, 2000);
+                    } else {
+                        throw new Error(response.message || 'Logout failed');
+                    }
+                } catch (error) {
+                    $('#status')
+                        .text('Error during logout: ' + error.message)
+                        .removeClass('connected waiting')
+                        .addClass('error');
+                }
+            }
+            
+            // Event handlers
+            $('#refreshBtn').click(async function () {
+                // showLoader("Check WhatsApp status...")
+
+                await checkWhatsAppStatus()
+
+                // hideLoader()
+            })
+
+            $('#logoutBtn').click(logout)
+            
+            // Initial check
+            checkWhatsAppStatus()
+            
+            // Set up polling - check every 10 seconds
+            const pollingInterval = setInterval(checkWhatsAppStatus, 600000)
+        });
+    </script>
+</body>
+</html>

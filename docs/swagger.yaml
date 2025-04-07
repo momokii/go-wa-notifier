@@ -1,0 +1,112 @@
+basePath: /api
+definitions:
+  models.NewsSendWhatsappReq:
+    properties:
+      category:
+        description: 'options: business, entertainment, general, health, science,
+          sports, technology'
+        example: business
+        type: string
+      whatsapp_numbers:
+        description: list of numbers to send the news to and start with code number
+          like 62 and not 0 like 08123456789
+        example:
+        - "6285727771234"
+        - "6285667889887"
+        items:
+          type: string
+        type: array
+    type: object
+  utils.MessageResponseError:
+    properties:
+      error:
+        default: true
+        example: true
+        type: boolean
+      message:
+        type: string
+    type: object
+  utils.MessageResponseSuccess:
+    properties:
+      error:
+        default: false
+        example: false
+        type: boolean
+      message:
+        type: string
+    type: object
+externalDocs:
+  description: OpenAPI
+  url: https://swagger.io/resources/open-api/
+host: localhost:3004
+info:
+  contact:
+    name: Kelana Chandra Helyandika
+    url: https://kelanach.xyz
+  description: -.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Go Whatsapp Notifier API
+  version: "1.0"
+paths:
+  /news/wa:
+    post:
+      consumes:
+      - application/json
+      description: Send news to whatsapp
+      parameters:
+      - description: body request detail
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.NewsSendWhatsappReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.MessageResponseSuccess'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.MessageResponseError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.MessageResponseError'
+      summary: Send news to whatsapp
+      tags:
+      - News
+  /wa/logout:
+    post:
+      consumes:
+      - application/json
+      description: Logout Whatsapp Account
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.MessageResponseSuccess'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.MessageResponseError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.MessageResponseError'
+      summary: Logout Whatsapp Account
+      tags:
+      - Whatsapp
+schemes:
+- https
+securityDefinitions:
+  BasicAuth:
+    type: basic
+swagger: "2.0"
