@@ -3,6 +3,7 @@ package whatsapp
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"sync"
 
@@ -129,8 +130,26 @@ func (w *whatsApp) GetClient() *whatsmeow.Client {
 	return w.client
 }
 
-func (w *whatsApp) SendMessage(to, message string, with_disconnect bool) error {
+// Ensure connection is active and recover if needed
+func (w *whatsApp) ensureConnected() error {
+	w.mutex.RLock()
+	isConnected := w.client != nil && w.client.IsConnected() && w.client.Store.ID != nil
+	w.mutex.RUnlock()
 
+	if !isConnected && w.client != nil && w.client.Store.ID != nil {
+		// Client exists and has an ID, but isn't connected - try to reconnect
+		log.Println("Reconnecting WhatsApp client...")
+		err := w.client.Connect()
+		if err != nil {
+			return fmt.Errorf("failed to reconnect: %v", err)
+		}
+		log.Println("WhatsApp client reconnected successfully")
+	}
+
+	return nil
+}
+
+func (w *whatsApp) SendMessage(to, message string, with_disconnect bool) error {
 	if w.client == nil {
 		return fmt.Errorf("client is nil")
 	}
@@ -139,9 +158,14 @@ func (w *whatsApp) SendMessage(to, message string, with_disconnect bool) error {
 		return fmt.Errorf("client is not connected")
 	}
 
+	// Ensure we're connected before sending
+	if err := w.ensureConnected(); err != nil {
+		return fmt.Errorf("connection check failed: %v", err)
+	}
+
 	ctx := context.Background()
 	_, err := w.client.SendMessage(ctx, types.JID{
-		User:   to, // Replace with the recipient's phone number
+		User:   to,
 		Server: types.DefaultUserServer,
 	}, &waE2E.Message{
 		Conversation: proto.String(message),
@@ -150,9 +174,11 @@ func (w *whatsApp) SendMessage(to, message string, with_disconnect bool) error {
 		return fmt.Errorf("error sending message: %v", err)
 	}
 
-	// if with_disconnect, so disconnect the client after sending the message
+	// IMPORTANT: Only disconnect if explicitly requested
+	// This should rarely be used - the singleton pattern means we usually want
+	// to keep the connection alive
 	if with_disconnect {
-		defer w.client.Disconnect()
+		w.client.Disconnect()
 	}
 
 	return nil
@@ -208,5 +234,12 @@ func (w *whatsApp) GetQRCode() (string, bool) {
 
 // IsConnected checks if the client is currently connected
 func (w *whatsApp) IsConnected() bool {
+	if w.client == nil {
+		return false
+	}
+
+	// Try to ensure connection if possible
+	w.ensureConnected()
+
 	return w.client != nil && w.client.IsConnected() && w.client.Store.ID != nil
 }

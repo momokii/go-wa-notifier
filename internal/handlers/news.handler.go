@@ -109,17 +109,16 @@ func (h *newsHandler) SendNewsAPIWhatsapp(c *fiber.Ctx) error {
 
 	message_whatsapp += "Powered by NewsAPI | Kelana Chandra Helyandika | kelanach.xyz"
 
-	// for security, initiate whatsapp just every need to send messages
+	// Get the singleton WhatsApp client without disconnecting it when done
 	waClient, err := whatsapp.NewWhatsApp()
 	if err != nil {
 		return utils.ResponseError(c, fiber.StatusInternalServerError, "Failed Initiate Whatsapp: "+err.Error())
 	}
-	defer func() {
-		if err := waClient.Disconnect(); err != nil {
-			log.Println("Error disconnecting WhatsApp client:", err)
-		}
-		log.Println("WhatsApp client disconnected")
-	}()
+
+	// Check if connected before sending
+	if !waClient.IsConnected() {
+		return utils.ResponseError(c, fiber.StatusInternalServerError, "WhatsApp client is not connected")
+	}
 
 	// send the messages to all the number
 	for _, number := range req_body.WhatsappNumbers {
