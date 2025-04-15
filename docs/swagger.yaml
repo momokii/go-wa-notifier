@@ -1,11 +1,68 @@
 basePath: /api
 definitions:
+  handlers.WAStatusResponse:
+    properties:
+      data:
+        properties:
+          is_connected:
+            type: boolean
+          is_ready:
+            type: boolean
+          qr_code:
+            type: string
+        type: object
+      error:
+        example: false
+        type: boolean
+      message:
+        type: string
+    type: object
   models.NewsSendWhatsappReq:
     properties:
       category:
         description: 'options: business, entertainment, general, health, science,
           sports, technology'
         example: business
+        type: string
+      whatsapp_numbers:
+        description: list of numbers to send the news to and start with code number
+          like 62 and not 0 like 08123456789
+        example:
+        - "6285727771234"
+        - "6285667889887"
+        items:
+          type: string
+        type: array
+    type: object
+  models.WeatherSendWhatsappReq:
+    properties:
+      lat:
+        description: required, latitude of the location
+        example: -6.2617
+        type: number
+      lon:
+        description: required, longitude of the location
+        example: 106.8103
+        type: number
+      type:
+        description: 'required, options: today, tomorrow'
+        example: today
+        type: string
+      whatsapp_numbers:
+        description: list of numbers to send the news to and start with code number
+          like 62 and not 0 like 08123456789
+        example:
+        - "6285727771234"
+        - "6285667889887"
+        items:
+          type: string
+        type: array
+    type: object
+  models.WhatsappMessagesReq:
+    properties:
+      messages:
+        description: message to be sent to the whatsapp numbers
+        example: Hello, this is a test message
         type: string
       whatsapp_numbers:
         description: list of numbers to send the news to and start with code number
@@ -51,7 +108,60 @@ info:
   title: Go Whatsapp Notifier API
   version: "1.0"
 paths:
-  /news/wa:
+  /wa/logout:
+    post:
+      consumes:
+      - application/json
+      description: Logout Whatsapp Account
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.MessageResponseSuccess'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.MessageResponseError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.MessageResponseError'
+      summary: Logout Whatsapp Account
+      tags:
+      - Whatsapp
+  /wa/messages:
+    post:
+      consumes:
+      - application/json
+      description: Send messages custom to whatsapp
+      parameters:
+      - description: body request detail
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.WhatsappMessagesReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.MessageResponseSuccess'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.MessageResponseError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.MessageResponseError'
+      summary: Send messages custom to whatsapp
+      tags:
+      - News
+  /wa/news:
     post:
       consumes:
       - application/json
@@ -81,11 +191,41 @@ paths:
       summary: Send news to whatsapp
       tags:
       - News
-  /wa/logout:
+  /wa/status:
+    get:
+      consumes:
+      - application/json
+      description: Check Whatsapp Status
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.WAStatusResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.MessageResponseError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.MessageResponseError'
+      summary: Check Whatsapp Status
+      tags:
+      - Whatsapp
+  /wa/weathers:
     post:
       consumes:
       - application/json
-      description: Logout Whatsapp Account
+      description: Send weather daily forecast
+      parameters:
+      - description: body request detail
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.WeatherSendWhatsappReq'
       produces:
       - application/json
       responses:
@@ -101,11 +241,11 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/utils.MessageResponseError'
-      summary: Logout Whatsapp Account
+      summary: Send weather daily forecast to whatsapp
       tags:
-      - Whatsapp
+      - News
 schemes:
-- https
+- http
 securityDefinitions:
   BasicAuth:
     type: basic

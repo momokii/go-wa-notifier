@@ -23,7 +23,88 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/news/wa": {
+        "/wa/logout": {
+            "post": {
+                "description": "Logout Whatsapp Account",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Whatsapp"
+                ],
+                "summary": "Logout Whatsapp Account",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/utils.MessageResponseSuccess"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/utils.MessageResponseError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/utils.MessageResponseError"
+                        }
+                    }
+                }
+            }
+        },
+        "/wa/messages": {
+            "post": {
+                "description": "Send messages custom to whatsapp",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "News"
+                ],
+                "summary": "Send messages custom to whatsapp",
+                "parameters": [
+                    {
+                        "description": "body request detail",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.WhatsappMessagesReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/utils.MessageResponseSuccess"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/utils.MessageResponseError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/utils.MessageResponseError"
+                        }
+                    }
+                }
+            }
+        },
+        "/wa/news": {
             "post": {
                 "description": "Send news to whatsapp",
                 "consumes": [
@@ -69,9 +150,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/wa/logout": {
-            "post": {
-                "description": "Logout Whatsapp Account",
+        "/wa/status": {
+            "get": {
+                "description": "Check Whatsapp Status",
                 "consumes": [
                     "application/json"
                 ],
@@ -81,7 +162,53 @@ const docTemplate = `{
                 "tags": [
                     "Whatsapp"
                 ],
-                "summary": "Logout Whatsapp Account",
+                "summary": "Check Whatsapp Status",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.WAStatusResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/utils.MessageResponseError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/utils.MessageResponseError"
+                        }
+                    }
+                }
+            }
+        },
+        "/wa/weathers": {
+            "post": {
+                "description": "Send weather daily forecast",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "News"
+                ],
+                "summary": "Send weather daily forecast to whatsapp",
+                "parameters": [
+                    {
+                        "description": "body request detail",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.WeatherSendWhatsappReq"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -106,6 +233,32 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "handlers.WAStatusResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "is_connected": {
+                            "type": "boolean"
+                        },
+                        "is_ready": {
+                            "type": "boolean"
+                        },
+                        "qr_code": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "error": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
         "models.NewsSendWhatsappReq": {
             "type": "object",
             "properties": {
@@ -113,6 +266,58 @@ const docTemplate = `{
                     "description": "options: business, entertainment, general, health, science, sports, technology",
                     "type": "string",
                     "example": "business"
+                },
+                "whatsapp_numbers": {
+                    "description": "list of numbers to send the news to and start with code number like 62 and not 0 like 08123456789",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "6285727771234",
+                        "6285667889887"
+                    ]
+                }
+            }
+        },
+        "models.WeatherSendWhatsappReq": {
+            "type": "object",
+            "properties": {
+                "lat": {
+                    "description": "required, latitude of the location",
+                    "type": "number",
+                    "example": -6.2617
+                },
+                "lon": {
+                    "description": "required, longitude of the location",
+                    "type": "number",
+                    "example": 106.8103
+                },
+                "type": {
+                    "description": "required, options: today, tomorrow",
+                    "type": "string",
+                    "example": "today"
+                },
+                "whatsapp_numbers": {
+                    "description": "list of numbers to send the news to and start with code number like 62 and not 0 like 08123456789",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "6285727771234",
+                        "6285667889887"
+                    ]
+                }
+            }
+        },
+        "models.WhatsappMessagesReq": {
+            "type": "object",
+            "properties": {
+                "messages": {
+                    "description": "message to be sent to the whatsapp numbers",
+                    "type": "string",
+                    "example": "Hello, this is a test message"
                 },
                 "whatsapp_numbers": {
                     "description": "list of numbers to send the news to and start with code number like 62 and not 0 like 08123456789",
@@ -170,7 +375,7 @@ var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
 	Host:             "localhost:3004",
 	BasePath:         "/api",
-	Schemes:          []string{"https"},
+	Schemes:          []string{"http"},
 	Title:            "Go Whatsapp Notifier API",
 	Description:      "-.",
 	InfoInstanceName: "swagger",

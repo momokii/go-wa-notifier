@@ -15,6 +15,16 @@ Welcome to **Go-WA-Notifier**, a fun and innovative web application designed to 
   - Fetch real-time news from trusted news APIs.
   - Enjoy a curated selection of relevant and up-to-date news content.
 
+- **Weather Notifier**  
+  - **OpenWeatherAPI Integration:** Seamlessly integrated with OpenWeatherAPI to pull the latest weather data.
+  - **Flexible Daily Forecasts:** Choose to receive forecasts for the current day or the following day.
+  - **Daily Highlights & Recommendations:** Provides key weather highlights along with personalized recommendations to help you plan your day better.
+
+- **WhatsApp Notifier Basic**  
+  - **Custom Message Notifications:** Send custom notifications directly to specified WhatsApp numbers based on user requests.
+  - **Flexible Message Content:** Easily customize the content of the messages to suit different use cases, whether it's for personal reminders, business alerts, or any other purpose.
+  - **Simple Configuration:** Configure the destination WhatsApp number(s) and content parameters through an intuitive API endpoint.
+
 <!-- - **Notification Dashboard**  
   - **Notification Overview**: View a history of all the news alerts sent to your WhatsApp.
   - **Notification Settings**: Customize the frequency and categories of news you wish to receive.

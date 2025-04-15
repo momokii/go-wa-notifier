@@ -17,8 +17,8 @@ type NewsAPIEverythingReq struct {
 	To             string `json:"to,omitempty"`             // YYYY-MM-DD
 	Domains        string `json:"domains,omitempty"`        // comma separated list of domains to include in the results
 	ExcludeDomains string `json:"excludeDomains,omitempty"` // comma separated list of domains to exclude from the results
-	Language       string `json:"language,omitempty"`       // ISO 639-1 code of the language to restrict the results to
-	Sources        string `json:"sources,omitempty"`        // comma separated list of identifiers for the news sources or blogs to include in the results
+	Language       string `json:"language,omitempty"`       // ISO 639-1 code of the language to restrict the results to, Possible options: ar, de, en, es, fr, he, it, nl, no, pt, ru, sv, ud, zh.
+	// Sources        string `json:"sources,omitempty"`        // comma separated list of identifiers for the news sources or blogs to include in the results
 }
 
 type NewsAPITopHeadlinesReq struct {
