@@ -267,6 +267,11 @@ const docTemplate = `{
                     "type": "string",
                     "example": "business"
                 },
+                "using_llm": {
+                    "description": "options: true, false, if set to true, the message news will be add with llm and if false, the message news will be add with the default message",
+                    "type": "boolean",
+                    "example": true
+                },
                 "whatsapp_numbers": {
                     "description": "list of numbers to send the news to and start with code number like 62 and not 0 like 08123456789",
                     "type": "array",
@@ -297,6 +302,11 @@ const docTemplate = `{
                     "description": "required, options: today, tomorrow",
                     "type": "string",
                     "example": "today"
+                },
+                "using_llm": {
+                    "description": "options: true, false, if set to true, the message news will be add with llm and if false, the message news will be add with the default message",
+                    "type": "boolean",
+                    "example": true
                 },
                 "whatsapp_numbers": {
                     "description": "list of numbers to send the news to and start with code number like 62 and not 0 like 08123456789",

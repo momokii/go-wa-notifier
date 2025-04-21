@@ -253,3 +253,17 @@ type OpenWeatherAPIError struct {
 	Message    string   `json:"message"`
 	Parameters []string `json:"parameters"`
 }
+
+// ===== AGGREGATED WEATHER DATA STRUCTURE ===== //
+// WeatherDataAggregate combines all the weather information for easier handling
+type WeatherDataAggregate struct {
+	Date             string                                  `json:"date"`
+	ReportType       string                                  `json:"report_type"` // "today" or "tomorrow"
+	Latitude         float64                                 `json:"latitude"`
+	Longitude        float64                                 `json:"longitude"`
+	WeatherOverview  string                                  `json:"weather_overview"`
+	Timezone         string                                  `json:"timezone"`
+	DailyAggregate   OpenWeatherAPIV3OneCallDailySummaryResp `json:"daily_aggregate"`
+	HourlyForecast   []HourlyData                            `json:"hourly_forecast"`
+	CurrentTimeLocal string                                  `json:"current_time_local"`
+}

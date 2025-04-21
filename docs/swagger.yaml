@@ -24,6 +24,12 @@ definitions:
           sports, technology'
         example: business
         type: string
+      using_llm:
+        description: 'options: true, false, if set to true, the message news will
+          be add with llm and if false, the message news will be add with the default
+          message'
+        example: true
+        type: boolean
       whatsapp_numbers:
         description: list of numbers to send the news to and start with code number
           like 62 and not 0 like 08123456789
@@ -48,6 +54,12 @@ definitions:
         description: 'required, options: today, tomorrow'
         example: today
         type: string
+      using_llm:
+        description: 'options: true, false, if set to true, the message news will
+          be add with llm and if false, the message news will be add with the default
+          message'
+        example: true
+        type: boolean
       whatsapp_numbers:
         description: list of numbers to send the news to and start with code number
           like 62 and not 0 like 08123456789

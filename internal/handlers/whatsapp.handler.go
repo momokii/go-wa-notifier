@@ -197,33 +197,38 @@ func (h *whatsappHandler) SendNewsAPIWhatsapp(c *fiber.Ctx) error {
 		message_whatsapp += fmt.Sprintf("🔗 *Read more:* %s\n\n", article.Url)
 	}
 
-	news_data = message_whatsapp
+	// continue using llm if using_llm is true
+	if req_body.UsingLLM {
+		news_data = message_whatsapp
 
-	news_type, err := utils.GetNewsType(req_body.Category)
-	if err != nil {
-		return utils.ResponseError(c, fiber.StatusBadRequest, "Invalid category: "+err.Error())
+		news_type, err := utils.GetNewsType(req_body.Category)
+		if err != nil {
+			return utils.ResponseError(c, fiber.StatusBadRequest, "Invalid category: "+err.Error())
+		}
+
+		prompt_news_summaries, err := utils.GenerateNewsSummariesPrompt(news_data, news_type)
+		if err != nil {
+			return utils.ResponseError(c, fiber.StatusInternalServerError, "Failed to generate news summaries: "+err.Error())
+		}
+
+		// create message and send to openai for summarization
+		message_summaries := []openai.OAMessageReq{
+			{
+				Role:    "user",
+				Content: prompt_news_summaries,
+			},
+		}
+
+		summaries_news_resp, err := h.openaiClient.OpenAIGetFirstContentDataResp(&message_summaries, false, nil, false, nil)
+		if err != nil {
+			return utils.ResponseError(c, fiber.StatusInternalServerError, "Failed to get summaries from OpenAI: "+err.Error())
+		}
+
+		// add the summaries to the message
+		message_whatsapp += fmt.Sprintf("🤖 *AI Summaries:*\n%s\n\n", summaries_news_resp.Content)
 	}
 
-	prompt_news_summaries, err := utils.GenerateNewsSummariesPrompt(news_data, news_type)
-	if err != nil {
-		return utils.ResponseError(c, fiber.StatusInternalServerError, "Failed to generate news summaries: "+err.Error())
-	}
-
-	// create message and send to openai for summarization
-	message_summaries := []openai.OAMessageReq{
-		{
-			Role:    "user",
-			Content: prompt_news_summaries,
-		},
-	}
-
-	summaries_news_resp, err := h.openaiClient.OpenAIGetFirstContentDataResp(&message_summaries, false, nil, false, nil)
-	if err != nil {
-		return utils.ResponseError(c, fiber.StatusInternalServerError, "Failed to get summaries from OpenAI: "+err.Error())
-	}
-
-	// add the summaries to the message
-	message_whatsapp += fmt.Sprintf("🤖 *AI Summaries:*\n%s\n\n", summaries_news_resp.Content)
+	// add footer to the message
 	message_whatsapp += "Powered by NewsAPI | Kelana Chandra Helyandika | kelanach.xyz"
 
 	// send messages to all numbers
@@ -324,41 +329,46 @@ func (h *whatsappHandler) SendWeatherAPIWhatsapp(c *fiber.Ctx) error {
 		return utils.ResponseError(c, fiber.StatusInternalServerError, "Failed to get weather onecall 24 hours: "+err.Error())
 	}
 
-	// get 24 data hpurly from the response
+	// get 24 data hourly from the response
 	weather_24hr := weather_onecall_24hr_resp.Hourly[0:24]
 
-	// process all the data and prompt to get the weather data summary with eyay
-	// generated structure weather data for prompt
-	weather_data := map[string]interface{}{
-		"date":             date,
-		"reportType":       reportType,
-		"latitude":         req_body.Lat,
-		"longitude":        req_body.Lon,
-		"weatherOverview":  weather_overview.WeatherOverview,
-		"timezone":         weather_overview.TZ,
-		"dailyAggregate":   weather_daily_aggregate,
-		"hourlyForecast":   weather_24hr,
-		"currentTimeLocal": localTime,
+	weatherData := openweatherapi.WeatherDataAggregate{
+		Date:             date,
+		ReportType:       reportType,
+		Latitude:         req_body.Lat,
+		Longitude:        req_body.Lon,
+		WeatherOverview:  weather_overview.WeatherOverview,
+		Timezone:         weather_overview.TZ,
+		DailyAggregate:   weather_daily_aggregate,
+		HourlyForecast:   weather_24hr,
+		CurrentTimeLocal: localTime,
 	}
 
-	// generate prompt
-	prompt := utils.GenerateWeatherPrompt(weather_data)
+	var messages_wa string
+	// check if using llm or not, if not just send the weather data to whatsapp
+	if req_body.UsingLLM {
+		// generate prompt
+		prompt := utils.GenerateWeatherPrompt(&weatherData)
 
-	// send to openai for summarization
-	messages := []openai.OAMessageReq{
-		{
-			Role:    "user",
-			Content: prompt,
-		},
+		// send to openai for summarization
+		messages := []openai.OAMessageReq{
+			{
+				Role:    "user",
+				Content: prompt,
+			},
+		}
+
+		weather_ai, err := h.openaiClient.OpenAIGetFirstContentDataResp(&messages, false, nil, false, nil)
+		if err != nil {
+			return utils.ResponseError(c, fiber.StatusInternalServerError, "Failed to get weather summary: "+err.Error())
+		}
+
+		// format response to message whatsapp
+		messages_wa = utils.FormatWeatherMessage(weather_ai.Content, &weatherData)
+	} else {
+		// If not using LLM, format the weather data manually
+		messages_wa = utils.FormatWeatherMessageManual(&weatherData)
 	}
-
-	weather_ai, err := h.openaiClient.OpenAIGetFirstContentDataResp(&messages, false, nil, false, nil)
-	if err != nil {
-		return utils.ResponseError(c, fiber.StatusInternalServerError, "Failed to get weather summary: "+err.Error())
-	}
-
-	// format response to message whatsapp
-	messages_wa := utils.FormatWeatherMessage(weather_ai.Content, weather_data)
 
 	// send messages
 	if err := whatsappSendMessages(messages_wa, req_body.WhatsappNumbers); err != nil {

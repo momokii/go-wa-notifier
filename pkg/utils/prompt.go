@@ -131,10 +131,9 @@ func GenerateNewsSummariesPrompt(news_data string, news_type NewsType) (string, 
 }
 
 // generateWeatherPrompt creates a comprehensive prompt for OpenAI to generate weather reports
-func GenerateWeatherPrompt(data map[string]interface{}) string {
-	reportType := data["reportType"].(string)
+func GenerateWeatherPrompt(data *openweatherapi.WeatherDataAggregate) string {
 	timeContext := "today"
-	if reportType == "tomorrow" {
+	if data.ReportType == "tomorrow" {
 		timeContext = "tomorrow"
 	}
 
@@ -191,26 +190,26 @@ IMPORTANT FORMATTING INSTRUCTIONS:
 - Make sure all key points and takeaways are formatted in *bold* for easy visibility
 - Format the final takeaways section as "*Key Takeaways:*" followed by numbered points
 `,
-		data["latitude"].(float64),
-		data["longitude"].(float64),
+		data.Latitude,
+		data.Longitude,
 		timeContext,
-		data["date"].(string),
-		data["latitude"].(float64),
-		data["longitude"].(float64),
-		data["weatherOverview"].(string),
-		data["dailyAggregate"].(openweatherapi.OpenWeatherAPIV3OneCallDailySummaryResp).Temperature.Min,
-		data["dailyAggregate"].(openweatherapi.OpenWeatherAPIV3OneCallDailySummaryResp).Temperature.Max,
-		data["dailyAggregate"].(openweatherapi.OpenWeatherAPIV3OneCallDailySummaryResp).Temperature.Morning,
-		data["dailyAggregate"].(openweatherapi.OpenWeatherAPIV3OneCallDailySummaryResp).Temperature.Afternoon,
-		data["dailyAggregate"].(openweatherapi.OpenWeatherAPIV3OneCallDailySummaryResp).Temperature.Evening,
-		data["dailyAggregate"].(openweatherapi.OpenWeatherAPIV3OneCallDailySummaryResp).Temperature.Night,
-		data["dailyAggregate"].(openweatherapi.OpenWeatherAPIV3OneCallDailySummaryResp).Humidity.Afternoon,
-		data["dailyAggregate"].(openweatherapi.OpenWeatherAPIV3OneCallDailySummaryResp).CloudCover.Afternoon,
-		data["dailyAggregate"].(openweatherapi.OpenWeatherAPIV3OneCallDailySummaryResp).Precipitation.Total,
-		data["dailyAggregate"].(openweatherapi.OpenWeatherAPIV3OneCallDailySummaryResp).Wind.Max.Speed,
-		data["dailyAggregate"].(openweatherapi.OpenWeatherAPIV3OneCallDailySummaryResp).Wind.Max.Direction,
-		data["dailyAggregate"].(openweatherapi.OpenWeatherAPIV3OneCallDailySummaryResp).Pressure.Afternoon,
-		formatHourlyDataForPrompt(data["hourlyForecast"].([]openweatherapi.HourlyData)),
+		data.Date,
+		data.Latitude,
+		data.Longitude,
+		data.WeatherOverview,
+		data.DailyAggregate.Temperature.Min,
+		data.DailyAggregate.Temperature.Max,
+		data.DailyAggregate.Temperature.Morning,
+		data.DailyAggregate.Temperature.Afternoon,
+		data.DailyAggregate.Temperature.Evening,
+		data.DailyAggregate.Temperature.Night,
+		data.DailyAggregate.Humidity.Afternoon,
+		data.DailyAggregate.CloudCover.Afternoon,
+		data.DailyAggregate.Precipitation.Total,
+		data.DailyAggregate.Wind.Max.Speed,
+		data.DailyAggregate.Wind.Max.Direction,
+		data.DailyAggregate.Pressure.Afternoon,
+		formatHourlyDataForPrompt(data.HourlyForecast),
 	)
 
 	return prompt
@@ -243,17 +242,4 @@ func formatHourlyDataForPrompt(hourlyData []openweatherapi.HourlyData) string {
 	}
 
 	return result.String()
-}
-
-// formatWeatherMessage adds appropriate headers and footers to the weather report
-func FormatWeatherMessage(content string, data map[string]interface{}) string {
-	reportType := "TODAY'S"
-	if data["reportType"].(string) == "tomorrow" {
-		reportType = "TOMORROW'S"
-	}
-
-	header := fmt.Sprintf("🌤️ *%s WEATHER FORECAST* 🌤️\n\n", reportType)
-	footer := "\n\nPowered by OpenWeather | Kelana Chandra Helyandika | kelanach.xyz"
-
-	return header + content + footer
 }
